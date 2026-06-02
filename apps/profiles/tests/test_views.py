@@ -92,7 +92,6 @@ class TestUserProfileView:
         http_status, status_code, title, *_ = params
 
         with allure.step(f"{http_status}: {title}"):
-            print(reverse(self.viewname, kwargs={'pk': str(pk)}))
             response = api_client.get(reverse(self.viewname, kwargs={'pk': str(pk)}))
             assert response.status_code == status_code, \
                 f"Ожидался статус {status_code}, получен - {response.status_code}"

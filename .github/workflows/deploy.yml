@@ -143,7 +143,7 @@ jobs:
           ALLURE_PROJECT_ID: 'default'
         run: |
           # Упаковываем результаты в zip
-          cd allure-results
+          # cd allure-results
           args=() \
           for file in allure-results/*; do \
             if [ -f "$file" ]; then \

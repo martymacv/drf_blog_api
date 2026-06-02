@@ -126,7 +126,7 @@ jobs:
             -e DB_PASSWORD=test_password \
             -v ${{ github.workspace }}/allure-results:/app/allure-results \
             ${{ env.REGISTRY }}/${{ env.IMAGE_NAME }}:latest \
-            sh -c "cat apps/profiles/urls.py && python manage.py migrate --noinput && pytest --alluredir=/app/allure-results"
+            sh -c "python manage.py migrate --noinput && pytest --alluredir=/app/allure-results"
         continue-on-error: true   # чтобы даже при падении тестов мы сохранили артефакт
 
       - name: Upload allure-results as artifact
@@ -154,7 +154,8 @@ jobs:
           # cd ..
           # Отправляем через API allure-docker-service
           # Подробнее: https://github.com/fescobar/allure-docker-service#send-results
-          curl -X POST "$ALLURE_SERVER_URL/allure-docker-service/send-results?project_id=github-ci" "${args[@]}"
+          response=$(curl -s -X POST "$ALLURE_SERVER_URL/allure-docker-service/send-results?project_id=github&force_project_creation=true" "${args[@]}")
+          echo "Send results response: $response"
 
       - name: Fail job if tests failed
         if: steps.tests.outcome == 'failure'

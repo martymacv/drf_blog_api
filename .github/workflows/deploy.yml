@@ -115,6 +115,7 @@ jobs:
           DATABASE_URL: postgres://test_user:test_password@postgres:5432/test_db
         run: |
           mkdir -p allure-results
+          cat apps/profiles/urls.py
           docker run --rm \
             --network ${{ job.services.postgres.network }} \
             -e DATABASE_URL="$DATABASE_URL" \
@@ -125,7 +126,6 @@ jobs:
             -e DB_PASSWORD=test_password \
             -v ${{ github.workspace }}/allure-results:/app/allure-results \
             ${{ env.REGISTRY }}/${{ env.IMAGE_NAME }}:latest \
-            cat apps/profiles/urls.py \
             sh -c "python manage.py migrate --noinput && pytest --alluredir=/app/allure-results"
         continue-on-error: true   # чтобы даже при падении тестов мы сохранили артефакт
 

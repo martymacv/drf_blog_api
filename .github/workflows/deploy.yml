@@ -140,7 +140,7 @@ jobs:
           ALLURE_SERVER_URL: ${{ secrets.ALLURE_SERVER_URL }}
           # ALLURE_USER: ${{ secrets.ALLURE_USER }}
           # ALLURE_PASSWORD: ${{ secrets.ALLURE_PASSWORD }}
-          ALLURE_PROJECT_ID: 'default'
+          ALLURE_PROJECT_ID: 'github-ci'
         run: |
           # Упаковываем результаты в zip
           # cd allure-results
@@ -153,7 +153,7 @@ jobs:
           cd ..
           # Отправляем через API allure-docker-service
           # Подробнее: https://github.com/fescobar/allure-docker-service#send-results
-          curl -X POST "$ALLURE_SERVER_URL/allure-docker-service/send-results?project_id=default" "${args[@]}"
+          curl -X POST "$ALLURE_SERVER_URL/allure-docker-service/send-results?project_id=github-ci" "${args[@]}"
 
       - name: Fail job if tests failed
         if: steps.tests.outcome == 'failure'

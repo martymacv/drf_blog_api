@@ -150,7 +150,7 @@ jobs:
               args+=(-F "files[]=@$file")
             fi
           done
-          cd ..
+          # cd ..
           # Отправляем через API allure-docker-service
           # Подробнее: https://github.com/fescobar/allure-docker-service#send-results
           curl -X POST "$ALLURE_SERVER_URL/allure-docker-service/send-results?project_id=github-ci" "${args[@]}"

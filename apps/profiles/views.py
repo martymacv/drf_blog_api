@@ -4,7 +4,7 @@ from django.db.models.query import QuerySet
 from rest_framework import status
 from rest_framework.views import APIView
 from rest_framework.response import Response
-from rest_framework.exceptions import PermissionDenied
+from rest_framework.exceptions import PermissionDenied, NotFound
 from rest_framework.permissions import IsAuthenticated, BasePermission
 
 from apps.profiles.models import Profile
@@ -23,7 +23,7 @@ class UserProfileView(APIView):
         profile = Profile.get_profile(kwargs['pk'])
         privacy = ProfilePrivacySettings.objects.get(profile=profile)
         if user and user.is_authenticated and user in privacy.blacklist.all():
-            raise PermissionDenied()
+            raise NotFound()
         serializer = self.serializer_class(
             profile, context={'request': request}
         )
@@ -59,7 +59,7 @@ class UserProfileView(APIView):
             raise PermissionDenied()
 
         profile = Profile.get_profile(kwargs['pk'])
-        profile.delete()
+        profile.anonymize()
 
         response = Response(status=status.HTTP_204_NO_CONTENT)
         response['X-Message'] = 'User has been deleted!'

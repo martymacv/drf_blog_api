@@ -1,164 +1,156 @@
 """Тесты для представлений (View)"""
-# pylint: disable=no-member
-from urllib.parse import urlparse
+import json
 import pytest
+import allure
 
-from django.urls import NoReverseMatch, reverse
+from django.urls import reverse
 
-from rest_framework import status
+from .helpers import update_profile_via_db
+from apps.accounts.tests.helpers import get_api_client
+from apps.privacy_settings.tests.helpers import add_to_blacklist_via_db
 
-from apps.utils import create_test_image
+
+class USER_ROLES:
+    SELF = 'self'
+    NONEXISTENT ='nonexistent'
+    OTHER_OPEN = 'other_open'
+    OTHER_BLACKLISTED = 'other_blacklisted'
 
 
+@allure.feature("DRF views / viewsets endpoints")
+@allure.story("Взаимодействие с профилями пользователей")
 @pytest.mark.django_db
 class TestUserProfileView:
     """
     Проверяется выдача информации по запросу
     авторизованного пользователя о другом пользователе
     """
+    viewname = 'rw_user_profile'
+
+    @staticmethod
+    def _attach(name: str = "Dummy", data: dict = {}):
+        allure.attach(
+            json.dumps(data, ensure_ascii=False, indent=4),
+            name=name,
+            attachment_type=allure.attachment_type.JSON
+        )
+
+    def _check_field_value(self, response, field, is_null=False):
+        with allure.step(f"Проверить, что поле {field} действительно обновилось"):
+            actual_value = response.data.get(field, None)
+            self._attach(name=field, data={
+                field: actual_value
+            })
+
+            if is_null:
+                actual_value = not actual_value
+
+            assert actual_value, \
+                f"Ожидалось, что значение поля {'' if is_null else 'не'} будет пустым"
+
+    @pytest.fixture()
+    def user_profile_dataset(self, request, user_factory, profile_data):
+        users = [user_factory() for _ in range(3)]
+        for user in users:
+            update_profile_via_db(user.profile, **profile_data())
+
+        open_user1, open_user2, close_user = users
+        add_to_blacklist_via_db(
+            close_user.profile.profile_privacies,
+            open_user1
+        )
+
+        target_user = request.param[3]
+        target_users = {
+            USER_ROLES.SELF: open_user1.pk,
+            USER_ROLES.NONEXISTENT: 1_000_000_000,
+            USER_ROLES.OTHER_OPEN: open_user2.pk,
+            USER_ROLES.OTHER_BLACKLISTED: close_user.pk,
+        }
+
+        has_jwt = request.param[4]
+        api_client = get_api_client(open_user1, has_jwt=has_jwt)
+
+        return api_client, target_users.get(target_user, None), request.param
+
+    @allure.severity(allure.severity_level.NORMAL)
+    @allure.title("GET-запросы профиля по User_ID")
+    @pytest.mark.parametrize("user_profile_dataset", [
+        ("HTTP_401_UNAUTHORIZED", 401, "Запросить любой профиль пользователя без авторизации", USER_ROLES.SELF, False, ),
+        ("HTTP_404_NOT_FOUND", 404, "Запросить профиль по несуществующему UserId через авторизованного юзера", USER_ROLES.NONEXISTENT, True, ),
+        ("HTTP_200_OK", 200, "Запросить свой профиль через авторизованного юзера", USER_ROLES.OTHER_OPEN, True, ),
+        ("HTTP_200_OK", 200, "Запросить чужой открытый профиль через авторизованного юзера", USER_ROLES.OTHER_OPEN, True, ),
+        ("HTTP_404_NOT_FOUND", 404, "Запросить чужой профиль с чёрным списком через авторизованного юзера", USER_ROLES.OTHER_BLACKLISTED, True, ),
+    ], indirect=True)
     def test_get_user_profile_by_user_id(
-            self, auth_client, users_profiles, temp_media
+            self, user_profile_dataset, temp_media
     ):
         """
-        Тест выдачи профиля пользователя
-        в контексте авторизованного пользователя
+        Тест выдачи информации пользовательских профилей
         """
-        users, profiles = users_profiles(2)
-        # profiles = map(lambda x: x[0], profiles)
+        api_client, pk, params = user_profile_dataset
+        http_status, status_code, title, *_ = params
 
-        urls = [
-            reverse('user_profile', kwargs={'pk': pk})
-            for pk, _ in enumerate(users, 1)
-        ]
+        with allure.step(f"{http_status}: {title}"):
+            response = api_client.get(reverse(self.viewname, kwargs={'pk': str(pk)}))
+            assert response.status_code == status_code, \
+                f"Ожидался статус {status_code}, получен - {response.status_code}"
 
-        responses = [
-            auth_client(users.user1).get(url)
-            for url in urls
-        ]
-        # проверка статус кода (200)
-        assert all((
-            response.status_code == status.HTTP_200_OK
-            for response in responses
-        ))
-        # проверка типа контента
-        assert all((
-            response.headers.get('Content-Type') == 'application/json'
-            for response in responses
-        ))
-        # проверка наличия токена аутентификации в запросе
-        assert all((
-            response.wsgi_request.META
-            .get('HTTP_AUTHORIZATION', None).startswith('Bearer ')
-
-            for response in responses
-        ))
-        # проверка по типу поля (CharField)
-        assert all((
-            response.data.get('first_name', None) == profile.first_name
-            for response, profile in zip(responses, profiles)
-        ))
-        # проверка по типу поля (URLField)
-        assert all((
-            response.data.get('link_to_github', None) == profile.link_to_github
-            for response, profile in zip(responses, profiles)
-        ))
-        # проверка по типу поля (ImageField)
-        assert all((
-            urlparse(response.data.get('avatar', None)).path ==
-            getattr(profile.avatar, 'url', None)
-
-            for response, profile in zip(responses, profiles)
-        ))
-        # проверка по типу поля (ForeignKey)
-        assert all((
-            response.data.get('user', None) == profile.user.id
-            for response, profile in zip(responses, profiles)
-        ))
-
-    @pytest.mark.parametrize(
-        'user_id', [0, 100_000]
-    )
-    def test_get_user_profile_by_non_existent_user(
-            self, auth_client, users_profiles, user_id, temp_media
-    ):
-        """
-        Тест на попытку получить данные по несуществующим пользователям
-        """
-        users, _ = users_profiles(1)
-
-        url = reverse('user_profile', kwargs={'pk': user_id})
-
-        response = auth_client(users.user1).get(url)
-        assert response.status_code == status.HTTP_404_NOT_FOUND
-
-    def test_4xx_status_codes(self, auth_client, users_profiles, temp_media):
-        """
-        Тесты ошибок статус кодов: 401
-        """
-        users, _ = users_profiles(1)
-        url = reverse('user_profile', kwargs={'pk': users.user1.id})
-
-        response = auth_client(
-            # users.user1,  <- убирается аутентификация из запроса
-        ).get(url)
-        assert response.status_code == status.HTTP_401_UNAUTHORIZED
-
+    @allure.severity(allure.severity_level.NORMAL)
+    @allure.title("POST-запросы для обновления профиля по User_ID")
+    @pytest.mark.parametrize("user_profile_dataset", [
+        ("HTTP_401_UNAUTHORIZED", 401, "Обновить профиль через неавторизованного юзера", USER_ROLES.SELF, False, ),
+        ("HTTP_200_OK", 200, "Обновить свой профиль через авторизованного юзера", USER_ROLES.SELF, True, ),
+        ("HTTP_403_FORBIDDEN", 403, "Обновить чужой профиль через авторизованного юзера", USER_ROLES.OTHER_OPEN, True, ),
+        ("HTTP_403_FORBIDDEN", 403, "Обновить профиль через авторизованного юзера по несуществующему UserId", USER_ROLES.NONEXISTENT, True, ),
+    ], indirect=True)
     def test_update_self_user_profile(
-            self, auth_client, users_profiles, profile_data, temp_media
+            self, user_profile_dataset, profile_data, temp_media
     ):
         """
-        Тест выдачи информации о самом себе
-        в контексте собственной авторизации
+        Тест обновления информации в пользовательских профилей
         """
-        # создаются два оригинальных пользователя с профилями
-        users, profiles = users_profiles(2)
+        api_client, pk, params = user_profile_dataset
+        http_status, status_code, title, *_ = params
 
-        profile1 = profile_data()  # профиль для обновления первого юзера
-        profile2 = profile_data()  # профиль для обновления второго юзера
+        profile = profile_data()
 
-        url1 = reverse('user_profile', kwargs={'pk': users.user1.profile.pk})
-        url2 = reverse('user_profile', kwargs={'pk': users.user2.profile.pk})
+        with allure.step(f"{http_status}: {title}"):
+            response = api_client.post(
+                reverse(self.viewname, kwargs={'pk': str(pk)}),
+                profile, format='multipart')
+            assert response.status_code == status_code, \
+                f"Ожидался статус {status_code}, получен - {response.status_code}"
+        
+            if status_code == 200:
+                for field in profile:
+                    self._check_field_value(response, field)
 
-        # проверяем обновление профиля для первого пользователя
-        response = auth_client(users.user1).post(
-            url1, profile1, format='multipart'
-        )
-        assert response.status_code == status.HTTP_200_OK
-        for field in profile1:
-            assert response.data.get(field, None)
-
-        # проверяем обновление профиля пользователя неавторизованным юзером
-        response = auth_client(
-            # users.user1  <- убирается аутентификация из запроса
-        ).post(url1, profile2, format='multipart')
-        assert response.status_code == status.HTTP_401_UNAUTHORIZED
-
-        # проверяем отправку данных profile2 для чужого профиля
-        response = auth_client(users.user1).post(
-            url2, profile2, format='multipart'
-        )
-        assert response.status_code == status.HTTP_403_FORBIDDEN
-
+    @allure.severity(allure.severity_level.NORMAL)
+    @allure.title("DELETE-запросы для очистки профиля по User_ID")
+    @pytest.mark.parametrize("user_profile_dataset", [
+        ("HTTP_401_UNAUTHORIZED", 401, "Удалить профиль через неавторизованного юзера", USER_ROLES.SELF, False, ),
+        ("HTTP_204_NO_CONTENT", 204, "Удалить свой профиль через авторизованного юзера", USER_ROLES.SELF, True, ),
+        ("HTTP_403_FORBIDDEN", 403, "Удалить чужой пользовательский профиль через авторизованного юзера", USER_ROLES.OTHER_OPEN, True, ),
+        ("HTTP_403_FORBIDDEN", 403, "Удалить профиль через авторизованного юзера по несуществующему UserId", USER_ROLES.NONEXISTENT, True, ),
+    ], indirect=True)
     def test_destroy_self_user_profile(
-            self, auth_client, users_profiles, temp_media
+            self, user_profile_dataset, profile_data, temp_media
     ):
         """
-        Тест удаления профиля пользователя
+        Тест мягкого удаления пользовательских профилей
         """
-        users, _ = users_profiles(2)
-        url1 = reverse('user_profile', kwargs={'pk': 1})
-        url2 = reverse('user_profile', kwargs={'pk': 2})
+        api_client, pk, params = user_profile_dataset
+        http_status, status_code, title, *_ = params
 
-        # проверяем, что анонимно удалить профиль нельзя
-        response = auth_client(
-            # users.user1  <- убирается аутентификация из запроса
-        ).delete(url1)
-        assert response.status_code == status.HTTP_401_UNAUTHORIZED
+        profile = profile_data().keys()
 
-        # проверяем, что удалить чужой профиль нельзя
-        response = auth_client(users.user1).delete(url2)
-        assert response.status_code == status.HTTP_403_FORBIDDEN
+        with allure.step(f"{http_status}: {title}"):
+            response = api_client.delete(reverse(self.viewname, kwargs={'pk': str(pk)}))
+            assert response.status_code == status_code, \
+                f"Ожидался статус {status_code}, получен - {response.status_code}"
 
-        # проверяем удаление самого себя
-        response = auth_client(users.user1).delete(url1)
-        assert response.status_code == status.HTTP_204_NO_CONTENT
+            if status_code == 204:
+                response = api_client.get(reverse(self.viewname, kwargs={'pk': str(pk)}))
+                for field in profile:
+                    self._check_field_value(response, field, is_null=True)

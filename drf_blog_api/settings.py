@@ -62,8 +62,11 @@ USE_X_FORWARDED_PORT = True
 
 # Разрешённые хосты
 allowed_hosts_str = os.getenv('ALLOWED_HOSTS', '')
+print(f'{allowed_hosts_str = }')
 if allowed_hosts_str:
     ALLOWED_HOSTS = [host.strip() for host in allowed_hosts_str.split(',')]
+    print(f'{ALLOWED_HOSTS = }')
+
 else:
     # В разработке разрешаем всё, в продакшене только указанные хосты
     ALLOWED_HOSTS = ['*'] if DEBUG else [
@@ -74,6 +77,7 @@ else:
     ]
     if not DEBUG:
         print("⚠️  ВНИМАНИЕ: ALLOWED_HOSTS не установлен для продакшена!")
+    print(f'{ALLOWED_HOSTS = }')
 
 
 # Application definition
@@ -141,20 +145,24 @@ WSGI_APPLICATION = 'drf_blog_api.wsgi.application'
 
 # Определяем, запущен ли Docker
 USE_DOCKER_DB = os.getenv('USE_DOCKER_DB', 'False').lower() == 'true'
+print(f'{USE_DOCKER_DB = }')
 
 if USE_DOCKER_DB:
     # Настройки для Docker PostgreSQL
+    print('Настройки для Docker PostgreSQL')
     DATABASES = {
         'default': {
             'ENGINE': 'django.db.backends.postgresql',
-            'NAME': 'drf_blog_api',
-            'USER': 'drf_blog_api',
-            'PASSWORD': 'drf_blog_api',
-            'HOST': 'localhost',  # localhost, т.к. порт проброшен
+            'NAME': os.getenv('DB_NAME', 'skillcrafts_db'),
+            'USER': os.getenv('DB_USER', 'skillcrafts_back'),
+            'PASSWORD': os.getenv('DB_PASSWORD', 'asdfASDF1!'),
+            'HOST': 'localhost',
             'PORT': '5433',
+            'CONN_MAX_AGE': 300,
         }
     }
 else:
+    print('Настройки для Docker PostgreSQL внутри контейнера')
     DATABASES = {
         # 'default': {
         #     'ENGINE': 'django.db.backends.sqlite3',
@@ -162,9 +170,9 @@ else:
         # }
         'default': {
             'ENGINE': 'django.db.backends.postgresql',
-            'NAME': os.getenv('DB_NAME', 'drf_blog_api'),
-            'USER': os.getenv('DB_USER', 'drf_blog_api'),
-            'PASSWORD': os.getenv('DB_PASSWORD', 'drf_blog_api'),
+            'NAME': os.getenv('DB_NAME', 'skillcrafts_db'),
+            'USER': os.getenv('DB_USER', 'skillcrafts_back'),
+            'PASSWORD': os.getenv('DB_PASSWORD', 'asdfASDF1!'),
             'HOST': os.getenv('DB_HOST', 'localhost'),
             'PORT': os.getenv('DB_PORT', '5432'),
             'CONN_MAX_AGE': 300,

@@ -177,6 +177,15 @@ class Profile(models.Model):
 
     def delete(self, using=None, keep_parents=False):
         # user = User.objects.get(pk=self.user)
+        pass
+
+    def anonymize(self):
+        """Очищает персональные данные, но сохраняет запись"""
+        default_profile = Profile()
+        for field in self._meta.fields:
+            if field.name != 'id' and field.name != 'user':
+                setattr(self, field.name, getattr(default_profile, field.name))
+        self.save()
         self.user.is_active = False
         self.user.save()
 

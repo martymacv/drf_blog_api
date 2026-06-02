@@ -144,16 +144,16 @@ jobs:
         run: |
           # Упаковываем результаты в zip
           cd allure-results
-          zip -r ../allure-results.zip .
+          args=() \
+          for file in allure-results/*; do \
+            if [ -f "$file" ]; then \
+              args+=(-F "files[]=@$file") \
+            fi \
+          done
           cd ..
           # Отправляем через API allure-docker-service
           # Подробнее: https://github.com/fescobar/allure-docker-service#send-results
-          curl -X POST "$ALLURE_SERVER_URL/allure-docker-service/send-results" \
-               -u "$ALLURE_USER:$ALLURE_PASSWORD" \
-               -H "accept: */*" \
-               -H "Content-Type: multipart/form-data" \
-               -F "file=@allure-results.zip;type=application/zip" \
-               -F "project_id=$ALLURE_PROJECT_ID"
+          curl -X POST "$ALLURE_SERVER_URL/allure-docker-service/send-results?project_id=default" "${args[@]}"
 
       - name: Fail job if tests failed
         if: steps.tests.outcome == 'failure'

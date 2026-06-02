@@ -15,7 +15,7 @@ urlpatterns = [
     ),
     path(
         '<int:pk>/', UserProfileView.as_view(),
-        name='update_user_profile'
+        name='rw_user_profile'
     ),
     path(
         '<int:profile>/work_formats/',

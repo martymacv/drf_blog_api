@@ -64,6 +64,10 @@ class ProfileSerializer(serializers.ModelSerializer):
         representation = super().to_representation(instance)
 
         request = self.context.get('request')
+
+        if not request or not request.user.is_authenticated:
+            return representation
+
         request_user = request.user
         instance_user = instance.user
 

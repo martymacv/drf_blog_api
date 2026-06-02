@@ -8,6 +8,9 @@ from faker import Faker
 from apps.accounts.models import User
 from apps.utils import create_test_image
 from apps.profiles.models import Profile
+from apps.privacy_settings.models import ProfilePrivacySettings
+
+from .factories import ProfileFactory
 
 
 fake = Faker()  # Создаем экземпляр Faker
@@ -40,22 +43,3 @@ def profile_data():
         defaults.update(kwargs)
         return defaults
     return get_profile
-
-
-@pytest.fixture
-def users_profiles(users_pool, profile_data):
-    """
-    Создаёт запись в accounts_user и в связанной таблице profiles_profile
-    """
-    def prepare_database(quantity=1):
-        users = users_pool(quantity)
-        profiles = [
-            profile_data(for_user=user)
-            for user in users
-        ]
-        profiles = [
-            Profile.objects.create(**profile)  # pylint: disable=E1101
-            for profile in profiles
-        ]
-        return users, profiles
-    return prepare_database

@@ -77,7 +77,7 @@ class TestUserProfileView:
     @allure.title("GET-запросы профиля по User_ID")
     @pytest.mark.parametrize("user_profile_dataset", [
         ("HTTP_401_UNAUTHORIZED", 401, "Запросить любой профиль пользователя без авторизации", USER_ROLES.SELF, False, ),
-        ("HTTP_404_NOT_FOUND", 403, "Запросить профиль по несуществующему UserId через авторизованного юзера", USER_ROLES.NONEXISTENT, True, ),
+        ("HTTP_404_NOT_FOUND", 404, "Запросить профиль по несуществующему UserId через авторизованного юзера", USER_ROLES.NONEXISTENT, True, ),
         ("HTTP_200_OK", 200, "Запросить свой профиль через авторизованного юзера", USER_ROLES.OTHER_OPEN, True, ),
         ("HTTP_200_OK", 200, "Запросить чужой открытый профиль через авторизованного юзера", USER_ROLES.OTHER_OPEN, True, ),
         ("HTTP_404_NOT_FOUND", 404, "Запросить чужой профиль с чёрным списком через авторизованного юзера", USER_ROLES.OTHER_BLACKLISTED, True, ),

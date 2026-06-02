@@ -149,7 +149,7 @@ jobs:
             if [ -f "$file" ]; then \
               args+=(-F "files[]=@$file") \
             fi \
-          done
+          done \
           cd ..
           # Отправляем через API allure-docker-service
           # Подробнее: https://github.com/fescobar/allure-docker-service#send-results

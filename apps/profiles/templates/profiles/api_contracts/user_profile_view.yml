@@ -1,0 +1,628 @@
+openapi: 3.0.3
+info:
+  title: API for SkillCrafts.Ru
+  version: release version 0.1
+  description: |-
+    ## Техническая документация
+    ### Описание проекта
+    API для сервиса [https://skillcrafts.ru](https://skillcrafts.ru)
+    с JWT аутентификацией (пользователи + гости). Чтобы познакомиться с ресурсом можно войти под учётной записью `user@example.com` с паролем `userUSER1!`. Все изменения, совершаемые под этой учётной записью, восстанавливаются в исходное состояние каждый час.
+
+    Подробнее о сервисах проекта ниже. Перейти к ендпоинтам
+    [**endpoints**](/api/docs/#/schema).
+
+    #### Сервис **auth**
+    Данный сервис работает с JWT токенами для доступа к ресурсу. Что такое JWT можно подробнее изучить [на хабре](https://habr.com/ru/articles/842056/)
+
+    Больше подробностей в ендпоинтах [**auth**](/api/docs/#/users).
+
+    #### Сервис **users**
+    Данный сервис проводит регистрацию пользователей и контролирует их вход.
+    Проводит аутентификацию и разграничение прав доступа.
+
+    Доступ к сервисам проекта можно получить как под временной учётной записью (гостем),
+    так и под постоянной. Для постоянной учётной записи при регистрации необходимо
+    указать и подтвердить **email**.
+
+    Больше подробностей в ендпоинтах [**users**](/api/docs/#/users).
+
+    #### Сервис **consents**
+    Данный сервис возвращает актуальные юридические документы, такие как:
+    - Политика конфиденциальности;
+    - Согласие на обработку персональных данных;
+    - Другие документы (при необходимости)...
+
+    Больше подробностей в ендпоинтах [**consents**](/api/docs/#/consents).
+
+    #### Сервис **privacy-settings**
+    Данный сервис позволяет пользователю гибко управлять доступом к своему контенту, реализуя политику конфеденциальности [**policy**](/api/docs/#/policy).
+
+    В этом сервисе настраивается чёрный и белый списки пользователей, а также тонко настраивать видимость персональных данных, указанных в своём профиле (см. следующий сервис **profiles**).
+
+    Всего можно настроить 4 уровня доступа к персональному контенту:
+    1. Видно всем;
+    2. Видно всем, кроме...;
+    3. Невидно никому, кроме...;
+    4. Невидно никому.
+
+    Указанная градация уровней применима к использованию в конкретном контексте.
+    Больше подробностей в ендпоинтах [**privacy-settings**](/api/docs/#/privacy-settings),
+    а также во всех ендпоинтах, контент которых содержит поле `privacy`.
+
+    #### Сервис **profiles**
+    Данный сервис позволяет гибко настраивать профиль пользователя. Указывать имя, фамилию, местонахождение, уровень образования и другие персональные данные. Также можно загрузить аватар и обои для профиля.
+
+    Для каждого поля профиля можно установить политику конфиденциальности (например, скрыть свою локацию от всех или только от тех, кто в чёрном списке). Это же касается и изображений. Ни одно изображение, загруженное пользователем, недоступно неавторизованному пользователю (анониму).
+
+    В профиле можно настроить стратегию политики конфиденциальности:
+    - От максимальной открытости (открытый профиль);
+    - До максимальная конфиденциальности (закрытый профиль).
+
+    В профиле есть возможность гибко настроить стратегию для каждого сервиса.
+
+    Больше подробностей в ендпоинтах [**profiles**](/api/docs/#/profiles).
+
+    #### Сервис **resume**
+    Данный сервис позволяет создавать одно резюме. Сервис помогает формулировать и структурировать полученный опыт.
+
+    С помощью сервиса можно создать как классическое резюме, так и прогрессивное. В резюме есть все артефакты для этого. В резюме можно добавлять, редактировать, удалять или скрывать места работы или их подробности.
+
+    Для полей резюме также предусмотрена настройка конфиденциальности через поле контента `privacy`. Значение по умолчанию устанавливается в соответствии с выбранной стратегией из настроек профиля.
+
+    Больше подробностей в ендпоинтах [**resume**](/api/docs/#/resume).
+
+    #### Сервис **workflows**
+    Данный сервис позволяет полноценно вести проекты.
+
+    С помощью сервиса пользователь может создавать, редактировать, удалять проекты и задачи. Двигать задачи по рабочему процессу (Очередь - Готовность к работе - В работе - На проверке - Выполнено/Отменено/Удалено). Привязывать задачи к проектам, отмечать задачи тегами и фильтровать задачи. Списывать на задачи время.
+
+    Также для задач можно устанавливать сроки и приоритеты, видеть историю изменения задачи и минимальную статистику (время нахождения на каждом этапе рабочего процесса).
+
+    Для задач также предусмотрена настройка конфиденциальности через поле контента `privacy`. Значение по умолчанию устанавливается в соответствии с выбранной стратегией из настроек профиля.
+
+    Больше подробностей в ендпоинтах [**workflows**](/api/docs/#/workflows).
+
+    #### Сервис знаний (**knowledge**)
+    Данный сервис позволяет пользователю составлять карту своих знаний в виде
+    дерева заметок (доступна опция форматированного ввода markdown).
+
+    По своей структуре это классическая карта знаний (MindMap). Пользователь по своему желанию, может составлять, редактировать и удалять карты, а также иметь лёгкий доступ к ним. Пользователь может просматривать чужие карты знаний, если они публичные или к ним есть доступ.
+
+    Пользователь может гибко управлять видимостью своих знаний. Каждая заметка имеет поле `privacy` со значением по умолчанию:
+    - **видно всем** для стратегии открытого профиля;
+    - **невидно никому** для стратегии закрытого профиля.
+
+    Больше подробностей в ендпоинтах
+    [**knowledge**](/api/docs/#/knowledge).
+
+    ### Restrictions and rights
+    #### License
+    This project is licensed under the MIT License - see the [LICENSE](LICENSE) file for details.
+    ![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)
+
+    #### Policy
+    [Политика конфиденциальности](/policy)
+paths:
+  /{id}/:
+    get:
+      operationId: root_retrieve
+      description: |-
+        ### Описание
+        Данный ендпоинт выдаёт профиль пользователя по уникальному идентификатору `id`, если запрашиваемый пользователь прошёл все этапы процедуры регистрации.
+
+        Успешный запрос вернёт следующую информацию о пользователе:
+        1. ФИО, профессию;
+        2. Локацию (город и страна проживания, возможность переезда);
+        3. Образование (уровень, название учебного заведения, год окончания);
+        4. Описание (произвольное краткое и полное описание);
+        5. Ссылки на социальные сети (телеграмм, github, vk);
+        6. Изображения (аватор, фотообои).
+        7. Предпочитаемые форматы работы.
+
+        ### Требования
+        Запрашивающий пользователь должен относиться к любой группе авторизованных пользователей (guest, user, moderator, admin, etc). Это самая нестрогая стратегия **открытости профиля**.
+
+        Запрашивающий пользователь не должен быть в чёрном списке запрашиваемого пользователя. Это стратегия **открытости для порядочных пользователей**.
+
+        Запрашивающий пользователь должен быть в белом списке запрашиваемого пользователя, в случае, если в профиле запрашиваемого пользователя для **всех** полей настроена политика конфиденциальности на уровне **Невидно никому, кроме...**. Если есть хотя бы одно более открытое поле (**Видно всем** или **Видно всем, кроме...**), то для запрашивающего пользователя не из белого списка будут видны **только открытые поля**. Это избирательная стратегия **открытости для избранных/друзей/коллег/посторонних и т.д.**.
+
+        Профиль запрашиваемого пользователя не будет виден никому, если **все** поля профиля будут закрыты на уровне **Невидно никому**. Это самая строгая стратегия **закрытости профиля**.
+      summary: Запрос данных о пользователе
+      parameters:
+      - in: path
+        name: id
+        schema:
+          type: integer
+        required: true
+      security:
+      - JWTAuth: []
+      - JWTAuth: []
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Profile'
+          description: ''
+        '401':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/NOT_AUTHENTICATED'
+          description: ''
+        '403':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/PERMISSION_DENIED'
+          description: ''
+        '404':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/NOT_FOUND'
+          description: ''
+    post:
+      operationId: root_create
+      description: |-
+        ### Описание
+        Для первичного создания и последующего обновления обновления профиля зарегистрированного пользователя.
+
+        Для заполнения доступны следующие общие поля профиля:
+        1. Персональные данные (ФИО, профессия);
+        2. Локация (город и страна проживания, возможность переезда);
+        3. Образование (уровень, название учебного заведения, год окончания);
+        4. Описание (произвольное краткое и полное описание);
+        5. Ссылки на социальные сети (телеграмм, github, vk);
+        6. Изображения (аватор, фотообои);
+
+        В случае успеха при полном или частичном обновлении профиля возвращается контент с полным профилем, как и при GET запросе.
+
+        ### Требования
+        - Изменение возможно только собственного профиля (группа **permissions - IsAccountOwner**).
+
+        ### Поля запроса
+        | Поле | Тип | Обязательное | Значение по умолчанию | Описание |
+        |------|-----|--------------|-----------------------|----------|
+        | `first_name` | string | Нет | `''` | Имя пользователя |
+        | `middle_name` | string | Нет | `''` | Отчество пользователя |
+        | `last_name` | string | Нет | `''` | Фамилия пользователя |
+        | `profession` | string | Нет | `''` | Профессия |
+        | `city` | string | Нет | `''` | Город проживания |
+        | `country` | string | Нет | `''` | Страна проживания (гражданство) |
+        | `relocation` | string | Нет | `''` | Место для переезда |
+        | `edu_level` | string | Нет | `'nothing'` | Уровень образования |
+        | `institution_name` | string | `''` | Нет | Наименование учебного заведения |
+        | `graduation_year` | integer | `null` | Нет | Год окончания учёбы |
+        | `short_desc` | string | Нет | `''` | Произвольное краткое описание |
+        | `full_desc` | string | Нет | `''` | Произвольное подробное форматированное описание |
+        | `wallpaper` | string | Нет | `null` | Ссылка на обои пользователя (не работает в swagger UI) |
+        | `avatar` | string | Нет | `null` | Ссылка на аватар пользователя (не работает в swagger UI) |
+        | `link_to_instagram` | string | Нет | `''` | Ссылка на инстаграмм (запрещен в РФ) |
+        | `link_to_telegram` | string | Нет | `''` | Ссылка на телеграм |
+        | `link_to_github` | string | Нет | `''` | Ссылка на github профиль |
+        | `link_to_vk` | string | Нет | `''` | Ссылка на вк-профиль |
+
+        Изменение данных профиля проводится и в других ендпоинтах:
+        - POST /profiles/{profile}/skills/
+        - PATCH /profiles/{profile}/skills/{skill}/
+        - PUT /profiles/{profile}/skills/{skill}/privacies/
+        - PATCH /profiles/{profile}/work_formats/
+      summary: Обновление своего профиля
+      parameters:
+      - in: path
+        name: id
+        schema:
+          type: integer
+        required: true
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/UpdateProfileRequest'
+            examples:
+              BaseRequestBodyFields:
+                value:
+                  first_name: Danielle
+                  middle_name: Angel
+                  last_name: Hill
+                  profession: Environmental health practitioner
+                  city: Robinsonshire
+                  country: Fiji
+                  relocation: Sudan, Port Lindachester
+                  institution_name: Doyle Ltd
+                  graduation_year: 2011
+                  short_desc: Choice whatever from behavior benefit.
+                  full_desc: Choice whatever from behavior benefit. Page southern
+                    role movie win her. Fall pick those gun court attorney product.
+                    World talk term herself law. Class great prove reduce raise author.
+                    Move each left establish. Detail food shoulder argue start source
+                    husband. Decision wall then fire. How trip learn enter east no
+                    enjoy. Investment on gun young catch management sense technology.
+                    Physical society instead as. Other life edge network wall quite.
+                    Race Mr environment political. Fall citizen about reveal. Will
+                    seven medical blood personal. Participant check several much single
+                    morning a. Major born guy world southern dream. There water beat
+                    magazine attorney. She campaign little near enter their institution.
+                    Up sense ready require human.
+                  wallpaper: wallpaper.jpeg
+                  avatar: avatar.jpeg
+                  link_to_instagram: https://t.me/garzaanthony
+                  link_to_telegram: https://t.me/garzaanthony
+                  link_to_github: https://github.com/robinsonwilliam
+                  link_to_vk: https://vk.com/hoffmanjennifer
+          application/x-www-form-urlencoded:
+            schema:
+              $ref: '#/components/schemas/UpdateProfileRequest'
+          multipart/form-data:
+            schema:
+              $ref: '#/components/schemas/UpdateProfileRequest'
+      security:
+      - JWTAuth: []
+      - JWTAuth: []
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/UpdateProfile'
+          description: ''
+        '400':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ProfileValidationError'
+          description: ''
+        '401':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/NOT_AUTHENTICATED'
+          description: ''
+        '403':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/PERMISSION_DENIED'
+          description: ''
+    delete:
+      operationId: root_destroy
+      description: |-
+        ### Описание
+        Удалить можно только собственный профиль. По факту производится мягкое удаление (деактивация) профиля. Полное удаление профиля доступно по запросу пользователя через форму обратной связи.
+
+        Удаление чужого профиля пользователя (со всеми связанными данными) доступно пользователям из групп admin и moderator.
+      summary: Удаление профиля пользователя
+      parameters:
+      - in: path
+        name: id
+        schema:
+          type: integer
+        required: true
+      security:
+      - JWTAuth: []
+      - JWTAuth: []
+      responses:
+        '204':
+          description: No response body
+        '401':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/NOT_AUTHENTICATED'
+          description: ''
+        '403':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/PERMISSION_DENIED'
+          description: ''
+components:
+  schemas:
+    BlankEnum:
+      enum:
+      - ''
+    EduLevelEnum:
+      enum:
+      - nothing
+      - school_9
+      - school_11
+      - ptu
+      - technical_school
+      - college
+      - unfinished_higher
+      - bachelor
+      - specialist
+      - master
+      - phd
+      - doctor
+      - mba
+      type: string
+      description: |-
+        * `nothing` - не указано
+        * `school_9` - 9 классов
+        * `school_11` - 11 классов
+        * `ptu` - ПТУ / Профессиональное училище
+        * `technical_school` - Техникум
+        * `college` - Колледж
+        * `unfinished_higher` - Неоконченное высшее
+        * `bachelor` - Бакалавр
+        * `specialist` - Специалист
+        * `master` - Магистр
+        * `phd` - Кандидат наук
+        * `doctor` - Доктор наук
+        * `mba` - MBA
+    NOT_AUTHENTICATED:
+      type: object
+      properties:
+        detail:
+          type: string
+          default: Authentication credentials were not provided.
+    NOT_FOUND:
+      type: object
+      properties:
+        detail:
+          type: string
+          default: Not found.
+    PERMISSION_DENIED:
+      type: object
+      properties:
+        detail:
+          type: string
+          default: You do not have permission to perform this action.
+    Profile:
+      type: object
+      description: |-
+        Сериализатор для выдачи профиля пользователя
+        по запросу авторизованного пользователя
+      properties:
+        user:
+          type: integer
+        work_formats:
+          allOf:
+          - $ref: '#/components/schemas/WorkFormat'
+          readOnly: true
+        first_name:
+          type: string
+          maxLength: 20
+        middle_name:
+          type: string
+          maxLength: 50
+        last_name:
+          type: string
+          maxLength: 20
+        profession:
+          type: string
+          title: Senior Product Manager | Growth & Monetization
+          maxLength: 100
+        city:
+          type: string
+          maxLength: 100
+        country:
+          type: string
+          maxLength: 100
+        relocation:
+          type: string
+          maxLength: 200
+        edu_level:
+          oneOf:
+          - $ref: '#/components/schemas/EduLevelEnum'
+          - $ref: '#/components/schemas/BlankEnum'
+        institution_name:
+          type: string
+          maxLength: 200
+        graduation_year:
+          type: integer
+          maximum: 32767
+          minimum: -32768
+          nullable: true
+        short_desc:
+          type: string
+          maxLength: 1000
+        full_desc:
+          type: string
+        wallpaper:
+          type: string
+          format: uri
+          nullable: true
+        avatar:
+          type: string
+          format: uri
+          nullable: true
+        link_to_instagram:
+          type: string
+          format: uri
+          nullable: true
+          maxLength: 200
+        link_to_telegram:
+          type: string
+          format: uri
+          nullable: true
+          maxLength: 200
+        link_to_github:
+          type: string
+          format: uri
+          nullable: true
+          maxLength: 200
+        link_to_vk:
+          type: string
+          format: uri
+          nullable: true
+          maxLength: 200
+      required:
+      - user
+    ProfileValidationError:
+      type: object
+      properties:
+        errors:
+          type: array
+          items: {}
+      required:
+      - errors
+    UpdateProfile:
+      type: object
+      description: |-
+        Сериализатор для обновления профиля пользователя
+        (модели Profile) в контексте авторизованного пользователя
+      properties:
+        first_name:
+          type: string
+          maxLength: 20
+        middle_name:
+          type: string
+          maxLength: 50
+        last_name:
+          type: string
+          maxLength: 20
+        profession:
+          type: string
+          title: Senior Product Manager | Growth & Monetization
+          maxLength: 100
+        city:
+          type: string
+          maxLength: 100
+        country:
+          type: string
+          maxLength: 100
+        relocation:
+          type: string
+          maxLength: 200
+        edu_level:
+          oneOf:
+          - $ref: '#/components/schemas/EduLevelEnum'
+          - $ref: '#/components/schemas/BlankEnum'
+        institution_name:
+          type: string
+          maxLength: 200
+        graduation_year:
+          type: integer
+          maximum: 32767
+          minimum: -32768
+          nullable: true
+        short_desc:
+          type: string
+          maxLength: 1000
+        full_desc:
+          type: string
+        wallpaper:
+          type: string
+          format: uri
+          nullable: true
+        avatar:
+          type: string
+          format: uri
+          nullable: true
+        link_to_instagram:
+          type: string
+          format: uri
+          nullable: true
+          maxLength: 200
+        link_to_telegram:
+          type: string
+          format: uri
+          nullable: true
+          maxLength: 200
+        link_to_github:
+          type: string
+          format: uri
+          nullable: true
+          maxLength: 200
+        link_to_vk:
+          type: string
+          format: uri
+          nullable: true
+          maxLength: 200
+    UpdateProfileRequest:
+      type: object
+      description: |-
+        Сериализатор для обновления профиля пользователя
+        (модели Profile) в контексте авторизованного пользователя
+      properties:
+        first_name:
+          type: string
+          maxLength: 20
+        middle_name:
+          type: string
+          maxLength: 50
+        last_name:
+          type: string
+          maxLength: 20
+        profession:
+          type: string
+          title: Senior Product Manager | Growth & Monetization
+          maxLength: 100
+        city:
+          type: string
+          maxLength: 100
+        country:
+          type: string
+          maxLength: 100
+        relocation:
+          type: string
+          maxLength: 200
+        edu_level:
+          oneOf:
+          - $ref: '#/components/schemas/EduLevelEnum'
+          - $ref: '#/components/schemas/BlankEnum'
+        institution_name:
+          type: string
+          maxLength: 200
+        graduation_year:
+          type: integer
+          maximum: 32767
+          minimum: -32768
+          nullable: true
+        short_desc:
+          type: string
+          maxLength: 1000
+        full_desc:
+          type: string
+        wallpaper:
+          type: string
+          format: binary
+          nullable: true
+        avatar:
+          type: string
+          format: binary
+          nullable: true
+        link_to_instagram:
+          type: string
+          format: uri
+          nullable: true
+          maxLength: 200
+        link_to_telegram:
+          type: string
+          format: uri
+          nullable: true
+          maxLength: 200
+        link_to_github:
+          type: string
+          format: uri
+          nullable: true
+          maxLength: 200
+        link_to_vk:
+          type: string
+          format: uri
+          nullable: true
+          maxLength: 200
+    WorkFormat:
+      type: object
+      description: |-
+        Сериализатор для выдачи и установки предпочитаемых
+        форматов работы (офис, удаленно, гибрид)
+      properties:
+        id:
+          type: integer
+          readOnly: true
+        office:
+          type: boolean
+        hybrid:
+          type: boolean
+        remote:
+          type: boolean
+  securitySchemes:
+    JWTAuth:
+      type: http
+      scheme: bearer
+      bearerFormat: JWT
+      description: JWT Bearer Token для аутентификации пользователей и гостей

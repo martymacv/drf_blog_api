@@ -5,7 +5,7 @@ from rest_framework.viewsets import ModelViewSet
 
 from drf_spectacular.utils import (
     inline_serializer, extend_schema, extend_schema_view,
-    OpenApiResponse
+    OpenApiResponse, OpenApiExample
 )
 from drf_spectacular.extensions import OpenApiViewExtension
 
@@ -13,7 +13,7 @@ from apps.profiles.serializers import (
     ProfileSerializer, UpdateProfileSerializer, SkillSerializer
 )
 
-from apps.CONSTANTS import NOT_AUTHENTICATED, PERMISSION_DENIED
+from apps.CONSTANTS import NOT_AUTHENTICATED, PERMISSION_DENIED, NOT_FOUND
 from docs.utils import read_md_section
 
 
@@ -33,8 +33,9 @@ class FixProfilesView(OpenApiViewExtension):
                 ),
                 responses={
                     status.HTTP_200_OK: ProfileSerializer,
-                    # status.HTTP_401_UNAUTHORIZED: NOT_AUTHENTICATED,
-                    status.HTTP_403_FORBIDDEN: PERMISSION_DENIED
+                    status.HTTP_401_UNAUTHORIZED: NOT_AUTHENTICATED,
+                    status.HTTP_403_FORBIDDEN: PERMISSION_DENIED,
+                    status.HTTP_404_NOT_FOUND: NOT_FOUND,
                 },
             ),
             education_levels=extend_schema(
@@ -72,6 +73,15 @@ class FixUserProfileView(OpenApiViewExtension):
     def view_replacement(self) -> type[APIView]:
 
         @extend_schema_view(
+            
+            # examples_response=[
+            #     OpenApiExample(
+            #         name='Базовые параметры для тела ответа',
+            #         value={'user': 1, 'name': 'New User', 'email': 'new@example.com'},
+            #         response_only=True, # Указываем, что это пример для ответа
+            #         status_codes=['201'] # Привязываем к конкретному статус-коду
+            #     )
+            # ],
             get=extend_schema(
                 summary="Запрос данных о пользователе",
                 description=read_md_section(
@@ -80,8 +90,9 @@ class FixUserProfileView(OpenApiViewExtension):
                 responses={
                     status.HTTP_200_OK: ProfileSerializer,
                     status.HTTP_401_UNAUTHORIZED: NOT_AUTHENTICATED,
-                    status.HTTP_403_FORBIDDEN: PERMISSION_DENIED
-                },
+                    status.HTTP_403_FORBIDDEN: PERMISSION_DENIED,
+                    status.HTTP_404_NOT_FOUND: NOT_FOUND,
+                }
             ),
             post=extend_schema(
                 summary="Обновление своего профиля",
@@ -100,6 +111,31 @@ class FixUserProfileView(OpenApiViewExtension):
                     status.HTTP_401_UNAUTHORIZED: NOT_AUTHENTICATED,
                     status.HTTP_403_FORBIDDEN: PERMISSION_DENIED
                 },
+                examples=[
+                    OpenApiExample(
+                        name='BaseRequestBodyFields',
+                        value={
+                            'first_name': 'Danielle',
+                            'middle_name': 'Angel',
+                            'last_name': 'Hill',
+                            'profession': 'Environmental health practitioner',
+                            'city': 'Robinsonshire',
+                            'country': 'Fiji',
+                            'relocation': 'Sudan, Port Lindachester',
+                            'institution_name': 'Doyle Ltd',
+                            'graduation_year': 2011,
+                            'short_desc': 'Choice whatever from behavior benefit.',
+                            'full_desc': 'Choice whatever from behavior benefit. Page southern role movie win her. Fall pick those gun court attorney product. World talk term herself law. Class great prove reduce raise author. Move each left establish. Detail food shoulder argue start source husband. Decision wall then fire. How trip learn enter east no enjoy. Investment on gun young catch management sense technology. Physical society instead as. Other life edge network wall quite. Race Mr environment political. Fall citizen about reveal. Will seven medical blood personal. Participant check several much single morning a. Major born guy world southern dream. There water beat magazine attorney. She campaign little near enter their institution. Up sense ready require human.',
+                            'wallpaper': 'wallpaper.jpeg',
+                            'avatar': 'avatar.jpeg',
+                            'link_to_instagram': 'https://t.me/garzaanthony',
+                            'link_to_telegram': 'https://t.me/garzaanthony',
+                            'link_to_github': 'https://github.com/robinsonwilliam',
+                            'link_to_vk': 'https://vk.com/hoffmanjennifer',
+                        },
+                        request_only=True,
+                    )
+                ]
             ),
             delete=extend_schema(
                 summary="Удаление профиля пользователя",

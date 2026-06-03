@@ -136,10 +136,10 @@ class Profile(models.Model):
         upload_to=user_avatar_path, null=True, blank=True
     )
 
-    link_to_instagram = models.URLField(default='', blank=True)
-    link_to_telegram = models.URLField(default='', blank=True)
-    link_to_github = models.URLField(default='', blank=True)
-    link_to_vk = models.URLField(default='', blank=True)
+    link_to_instagram = models.URLField(default='', blank=True, null=True)
+    link_to_telegram = models.URLField(default='', blank=True, null=True)
+    link_to_github = models.URLField(default='', blank=True, null=True)
+    link_to_vk = models.URLField(default='', blank=True, null=True)
 
     user = models.OneToOneField(
         User,
@@ -169,9 +169,7 @@ class Profile(models.Model):
             profile = None
 
         if profile is None:
-            raise NotFound(
-                detail="Profile not found"
-            )
+            raise NotFound()
 
         return profile
 

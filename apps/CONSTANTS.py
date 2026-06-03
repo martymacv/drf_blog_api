@@ -1,9 +1,10 @@
+from http.client import NOT_FOUND
 from drf_spectacular.utils import inline_serializer
 
 from rest_framework import serializers
 from rest_framework.exceptions import (
     AuthenticationFailed, NotAuthenticated, PermissionDenied,
-    ValidationError
+    ValidationError, NotFound
 )
 
 
@@ -37,6 +38,15 @@ BAD_REQUEST = inline_serializer(
     fields={
         'detail': serializers.CharField(
             default=ValidationError.default_detail
+        )
+    }
+)
+
+NOT_FOUND = inline_serializer(
+    name='NOT_FOUND',
+    fields={
+        'detail': serializers.CharField(
+            default=NotFound.default_detail
         )
     }
 )

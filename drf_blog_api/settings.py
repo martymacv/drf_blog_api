@@ -41,6 +41,8 @@ if not SECRET_KEY:
 # SECURITY WARNING: don't run with debug turned on in production!
 DEBUG = os.getenv('DEBUG', 'False').lower() in ('true', '1', 'yes', 't')
 
+print(DEBUG)
+
 if not DEBUG:
     # ПРОДАКШЕН - всегда HTTPS
     SECURE_PROXY_SSL_HEADER = ('HTTP_X_FORWARDED_PROTO', 'https')
@@ -64,7 +66,7 @@ USE_X_FORWARDED_PORT = True
 allowed_hosts_str = os.getenv('ALLOWED_HOSTS', '')
 print(f'{allowed_hosts_str = }')
 if allowed_hosts_str:
-    ALLOWED_HOSTS = [host.strip() for host in allowed_hosts_str.split(',')]
+    ALLOWED_HOSTS = [host.strip() for host in allowed_hosts_str.split(',')] + ['testserver']
     print(f'{ALLOWED_HOSTS = }')
 
 else:
@@ -74,6 +76,7 @@ else:
         'www.portfolio-blog-api.ru',
         'localhost',
         '127.0.0.1',
+        'testserver',
     ]
     if not DEBUG:
         print("⚠️  ВНИМАНИЕ: ALLOWED_HOSTS не установлен для продакшена!")

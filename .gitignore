@@ -2,6 +2,7 @@ media
 experiments.py
 services
 allure-results
+send-to_allure.sh
 
 # Byte-compiled / optimized / DLL files
 __pycache__/

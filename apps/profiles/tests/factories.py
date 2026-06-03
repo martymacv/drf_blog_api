@@ -12,3 +12,5 @@ class ProfileFactory(DjangoModelFactory):
 
     class Meta:
         model = Profile
+
+    

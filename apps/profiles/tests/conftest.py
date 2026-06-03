@@ -3,7 +3,9 @@
 
 import pytest
 from faker import Faker
-
+from pathlib import Path
+import yaml
+from openapi_pydantic import OpenAPI
 
 from apps.accounts.models import User
 from apps.utils import create_test_image
@@ -43,3 +45,10 @@ def profile_data():
         defaults.update(kwargs)
         return defaults
     return get_profile
+
+
+@pytest.fixture(scope="session")
+def user_profile_view_contract():
+    contract_path = Path(__file__).parent.parent / "contracts" / "user_profile_view.yml"
+    with open(contract_path, "r", encoding="utf-8") as f:
+        return yaml.safe_load(f)

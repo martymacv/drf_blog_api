@@ -12,6 +12,9 @@ from django.test import override_settings
 from rest_framework.test import APIClient
 from rest_framework_simplejwt.tokens import RefreshToken
 
+from apps.accounts.models import User
+from apps.authentication.tokens import CustomAccessToken
+
 
 # собираем все conftest воедино
 pytest_plugins = [
@@ -33,14 +36,15 @@ def temp_media():
 
 
 @pytest.fixture
-def auth_client():
-    """Фабрика API клиентов с JWT токеном в заголовках"""
-    def create_auth_client(user=None):
+def api_client():
+    def _create(user: User | None, has_jwt: bool = True):
         client = APIClient()
-        if user is not None:
-            refresh = RefreshToken.for_user(user)  # type: ignore
+        access = None
+        if has_jwt:
+            access = CustomAccessToken.for_user(user)  # type: ignore
             client.credentials(
-                HTTP_AUTHORIZATION=f'Bearer {refresh.access_token}'
+                HTTP_AUTHORIZATION=f'Bearer {access}'
             )
-        return client
-    return create_auth_client
+        return client, access
+    
+    return _create

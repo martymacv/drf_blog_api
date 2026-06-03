@@ -67,7 +67,6 @@ class TestUserProfileView:
             USER_ROLES.OTHER_OPEN: open_user2.pk,
             USER_ROLES.OTHER_BLACKLISTED: close_user.pk,
         }
-
         has_jwt = request.param[4]
         api_client = get_api_client(open_user1, has_jwt=has_jwt)
 

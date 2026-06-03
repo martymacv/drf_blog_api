@@ -5,7 +5,6 @@ from typing import Any
 
 import pytest
 import allure
-import validators
 
 from schemathesis.transport.wsgi import WSGITransport
 import jsonschema
